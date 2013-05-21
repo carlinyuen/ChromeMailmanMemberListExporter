@@ -1,0 +1,22 @@
+{
+	"EXTENSION_NAME": {
+		"message": "Member List Exporter for Mailman™"
+		, "description": "Extension name."
+	}
+
+	, "EXTENSION_DESCRIPTION": {
+		"message": "Easily export member lists from mailman! No more copy paste, thank goodnes!"
+		, "description": "Extension description."
+	}
+
+	, "BROWSER_ACTION_TITLE": {
+		"message": "Mailman Member List Export"
+		, "description": "Browser action default title."
+	}
+
+	, "TEMPLATE": {
+		"message": "Text"
+		, "description": "Template"
+	}
+
+}
