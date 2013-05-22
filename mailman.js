@@ -1,5 +1,8 @@
 
 // Global Variables & Constants
+var ASCII_CODE_LETTER_A = 97;
+var ASCII_CODE_NUM_9 = 57;
+var START_PAGE_LETTER = '0';
 var END_PAGE_LETTER = 'z';
 var MAILMAN_REGEX = /mailman.jpg/;
 var PAGE_LETTER;
@@ -9,11 +12,9 @@ $(function()
 {
 	// Detect page letter
 	PAGE_LETTER = getURLParameter('letter');
-	console.log("Page Letter:", PAGE_LETTER);
 
 	// If no letter, then should clear stored data
 	if (!PAGE_LETTER) {
-		console.log("Clearing Local Storage");
 		chrome.storage.local.remove(['exportData', 'continue', 'auto']);
 	}
 	else	// Check if continuing from previous page
@@ -21,7 +22,7 @@ $(function()
 		chrome.storage.local.get('continue', function(data) {
 			if (data.continue)
 			{
-				console.log("Continuing...");
+				console.log("Continuing Mailman Export...");
 				runExport();
 			}
 		});
@@ -77,11 +78,11 @@ function runExport()
 		var members = exportMemberList($.isEmptyObject(data) ? null : data.exportData);
 		chrome.storage.local.set({exportData: members}, function()
 		{
-			// Check if there were results and we should set letter as 'a'
+			// Check if there were results and we should set letter
 			if (members.length && !PAGE_LETTER)
 			{
-				console.log("First page, setting letter to 'a'");
-				PAGE_LETTER = 'a';
+				console.log("First page, setting letter to '" + START_PAGE_LETTER + "'");
+				PAGE_LETTER = getNextPageLetter(START_PAGE_LETTER).letter;
 
 				// See if they want to autorun
 				chrome.storage.local.set({auto:
@@ -89,35 +90,67 @@ function runExport()
 				});
 			}
 
-			// Check whether to go to next page
-			if (PAGE_LETTER != END_PAGE_LETTER)
+			// Check whether we can go to next page
+			var nextLetter = getNextPageLetter(nextAsciiCharacter(PAGE_LETTER));
+			if (nextLetter && nextLetter.letter <= END_PAGE_LETTER)
 			{
+				// Check to see if we should automatically move on
 				chrome.storage.local.get('auto', function(data)
 				{
 					var continueResult = data.auto;
-					if (!continueResult) {
+					if (!continueResult) {	// If not auto, confirm it with user
 						continueResult = confirm('Would you like to continue to the next page?');
 					}
-					if (continueResult) {
-						chrome.storage.local.set({continue: true}, function() {
-							window.location = $('table').find('center')
-								.find('a[href$="' + nextAsciiCharacter(PAGE_LETTER) + '"]')
-								.first().attr('href');
-						});
-					}
+
+					// Save continue state
+					chrome.storage.local.set({continue: continueResult}, function()
+					{
+						// If user said continue, we change url
+						if (continueResult) {
+							window.location = nextLetter.link.first().attr('href');
+						} else {	// Else, finish up here
+							finishExport(members);
+						}
+					});
 				});
 			}
-			else	// Done! Alert user and copy to clipboard
-			{
-				// Clean up
-				chrome.storage.local.remove(['continue', 'auto']);
-
-				var exportString = members.join('\n');
-				chrome.runtime.sendMessage({request: "copyToClipboard",
-					data: exportString}, function(response) {alert(response);});
+			else {	// We're done! Alert user and copy to clipboard
+				finishExport(members);
 			}
 		});
 	});
+}
+
+// Gets next available page letter, link must exist on page,
+//	and will also check the current passed letter
+function getNextPageLetter(letter)
+{
+	// Check whether we can go to next page
+	for (; letter != END_PAGE_LETTER; letter = nextAsciiCharacter(letter))
+	{
+		// Look for next page link
+		var $link = $('table').find('center')
+			.find('a[href$="' + letter + '"]');
+
+		// If next page link exists
+		if ($link.get().length) {
+			return {letter: letter, link: $link};
+		}
+	}
+
+	return null;
+}
+
+// Export complete
+function finishExport(members)
+{
+	// Clean up
+	chrome.storage.local.remove(['continue', 'auto']);
+
+	// Copy text to clipboard, alert user of response
+	var exportString = members.join('\n');
+	chrome.runtime.sendMessage({request: "copyToClipboard",
+		data: exportString}, function(response) {alert(response);});
 }
 
 // Export out member list
@@ -145,5 +178,7 @@ function getURLParameter(name) {
 }
 
 function nextAsciiCharacter(c) {
-	return String.fromCharCode(c.charCodeAt(0) + 1);
+	var charCode = c.charCodeAt(0);
+	return String.fromCharCode(charCode == ASCII_CODE_NUM_9
+		? ASCII_CODE_LETTER_A : charCode + 1);
 }
