@@ -4,8 +4,6 @@
 // Listen for whether or not to show the pageAction icon
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse)
 {
-	console.log("background onMessage:", request);
-
 	switch (request.request)
 	{
 		case "showPageAction":
@@ -20,9 +18,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse)
 });
 
 // Listen for if pageAction icon is clicked
-chrome.pageAction.onClicked.addListener(function(tab)
-{
-	console.log("pageAction onClicked:", tab);
-
+chrome.pageAction.onClicked.addListener(function(tab) {
 	chrome.tabs.sendMessage(tab.id, {action: "export"}, function(response) {});
 });
