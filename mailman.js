@@ -18,7 +18,8 @@ $(function()
 	else	// Check if continuing from previous page
 	{
 		chrome.storage.local.get('continue', function(data) {
-			if (data.continue) {
+			if (data.continue)
+			{
 				console.log("Continuing...");
 				runExport();
 			}
@@ -37,7 +38,17 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse)
 	switch (request.action)
 	{
 		case "export":
-			runExport();
+			// Check if data already exists
+			chrome.storage.local.get('exportData', function(data) {
+				// Check if user wants to clear data
+				if (data.exportData &&
+						confirm("Old export data exists, would you like to clear it?")) {
+					chrome.storage.local.remove(['exportData', 'continue', 'auto']
+						, function() { runExport(); });
+				} else {
+					runExport();
+				}
+			});
 			break;
 
 		default:
@@ -97,6 +108,9 @@ function runExport()
 			}
 			else	// Done! Alert user and copy to clipboard
 			{
+				// Clean up
+				chrome.storage.local.remove(['continue', 'auto']);
+
 				var exportString = members.join('\n');
 				chrome.runtime.sendMessage({request: "copyToClipboard",
 					data: exportString}, function(response) {alert(response);});
