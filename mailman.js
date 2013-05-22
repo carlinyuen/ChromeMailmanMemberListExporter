@@ -144,6 +144,8 @@ function getNextPageLetter(letter)
 // Export complete
 function finishExport(members)
 {
+	console.log("finishExport:", members.length);
+
 	// Clean up
 	chrome.storage.local.remove(['continue', 'auto']);
 

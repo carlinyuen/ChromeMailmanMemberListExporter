@@ -36,7 +36,6 @@ chrome.pageAction.onClicked.addListener(function(tab) {
 
 function copyTextToClipboard(text)
 {
-	console.log("copyText");
     var copyFrom = $('<textarea/>')
 		.attr('id', 'clipboard')
 		.text(unescape(text))
