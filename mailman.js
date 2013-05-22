@@ -1,17 +1,18 @@
 
 // Global Variables & Constants
-var regex = /mailman.jpg/;
-var letter;
+var END_PAGE_LETTER = 'z';
+var MAILMAN_REGEX = /mailman.jpg/;
+var PAGE_LETTER;
 
 // Document ready function
 $(function()
 {
 	// Detect page letter
-	letter = getURLParameter('letter');
-	console.log("Page Letter:", letter);
+	PAGE_LETTER = getURLParameter('letter');
+	console.log("Page Letter:", PAGE_LETTER);
 
 	// If no letter, then should clear stored data
-	if (!letter) {
+	if (!PAGE_LETTER) {
 		console.log("Clearing Local Storage");
 		chrome.storage.local.remove(['exportData', 'continue', 'auto']);
 	}
@@ -27,7 +28,7 @@ $(function()
 	}
 
 	// Look for mailman to show page action
-	if (regex.test(document.body.innerHTML)) {
+	if (MAILMAN_REGEX.test(document.body.innerHTML)) {
 		chrome.runtime.sendMessage({request: "showPageAction"});
 	}
 });
@@ -76,11 +77,11 @@ function runExport()
 		var members = exportMemberList($.isEmptyObject(data) ? null : data.exportData);
 		chrome.storage.local.set({exportData: members}, function()
 		{
-			// Check if there were results and we should set letter as a
-			if (members.length && !letter)
+			// Check if there were results and we should set letter as 'a'
+			if (members.length && !PAGE_LETTER)
 			{
 				console.log("First page, setting letter to 'a'");
-				letter = 'a';
+				PAGE_LETTER = 'a';
 
 				// See if they want to autorun
 				chrome.storage.local.set({auto:
@@ -89,7 +90,7 @@ function runExport()
 			}
 
 			// Check whether to go to next page
-			if (letter != 'c')
+			if (PAGE_LETTER != END_PAGE_LETTER)
 			{
 				chrome.storage.local.get('auto', function(data)
 				{
@@ -100,7 +101,7 @@ function runExport()
 					if (continueResult) {
 						chrome.storage.local.set({continue: true}, function() {
 							window.location = $('table').find('center')
-								.find('a[href$="' + nextAsciiCharacter(letter) + '"]')
+								.find('a[href$="' + nextAsciiCharacter(PAGE_LETTER) + '"]')
 								.first().attr('href');
 						});
 					}

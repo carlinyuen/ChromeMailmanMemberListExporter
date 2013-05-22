@@ -39,7 +39,7 @@ function copyTextToClipboard(text)
 	console.log("copyText");
     var copyFrom = $('<textarea/>')
 		.attr('id', 'clipboard')
-		.text(text)
+		.text(unescape(text))
 		.appendTo('body')
 		.select();
     document.execCommand('copy', true);
