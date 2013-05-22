@@ -27,10 +27,8 @@ $(function()
 
 	// Look for mailman to show page action
 	if (regex.test(document.body.innerHTML)) {
-		chrome.runtime.sendMessage({request: "showPageAction"}
-			, function(response) {});
+		chrome.runtime.sendMessage({request: "showPageAction"});
 	}
-
 });
 
 // Listen for messages from background
@@ -52,10 +50,16 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse)
 // Setup and run export
 function runExport()
 {
+	// Check if it's a member list page
+	if (!$('h2:contains("Membership List")').get().length) {
+		alert('Could not find membership list on this page!');
+		return;
+	}
+
 	// Get last saved data
 	chrome.storage.local.get('exportData', function(data)
 	{
-		console.log('exportData:', data);
+		console.log('exportData:', (data.exportData ? data.exportData.length : "empty"));
 
 		// Export on-page list and save the new data
 		var members = exportMemberList($.isEmptyObject(data) ? null : data.exportData);
@@ -74,7 +78,7 @@ function runExport()
 			}
 
 			// Check whether to go to next page
-			if (letter != 'z')
+			if (letter != 'c')
 			{
 				chrome.storage.local.get('auto', function(data)
 				{
@@ -90,6 +94,12 @@ function runExport()
 						});
 					}
 				});
+			}
+			else	// Done! Alert user and copy to clipboard
+			{
+				var exportString = members.join('\n');
+				chrome.runtime.sendMessage({request: "copyToClipboard",
+					data: exportString}, function(response) {alert(response);});
 			}
 		});
 	});
